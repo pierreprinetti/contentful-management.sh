@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+
+## Export in your environment the configuration variables:
+# SPACE_ID='<space_id>'
+# CMA_TOKEN='<cma_token>'
+
+## Dependencies:
+## - sh
+## - curl
+## - grep
+
+contenttype_put() {
+  local typename="$1"
+  local filename="$2"
+  local response
+
+  response=$(curl --silent \
+    --include \
+    --request PUT \
+    --header "Authorization: Bearer ${CMA_TOKEN}" \
+    --header 'Content-Type: application/vnd.contentful.management.v1+json' \
+    --data-binary @"${filename}" \
+    "https://api.contentful.com/spaces/${SPACE_ID}/content_types/${typename}")
+  echo "$response"
+  echo "$response" | head -n1 | grep '201' > /dev/null || exit 1
+}
+
+contenttype_delete() {
+  local typename="$1"
+  local response
+
+  response=$(curl --silent \
+    --include \
+    --request DELETE \
+    --header "Authorization: Bearer ${CMA_TOKEN}" \
+    --header 'Content-Type: application/vnd.contentful.management.v1+json' \
+    "https://api.contentful.com/spaces/${SPACE_ID}/content_types/${typename}")
+  echo "$response"
+  echo "$response" | head -n1 | grep '204' > /dev/null || exit 1
+}
+
+contenttype_activate() {
+  local typename="$1"
+  local response
+
+  response=$(curl --silent \
+    --include \
+    --request PUT \
+    --header "Authorization: Bearer ${CMA_TOKEN}" \
+    --header 'X-Contentful-Version: 1' \
+    "https://api.contentful.com/spaces/${SPACE_ID}/content_types/${typename}/published")
+  echo "$response"
+  echo "$response" | head -n1 | grep '200' > /dev/null || exit 1
+}
+
+content_get() {
+  local entry_id="$1"
+  local response
+
+  response=$(curl --silent \
+    --include \
+    --request GET \
+    --header "Authorization: Bearer ${CMA_TOKEN}" \
+    "https://api.contentful.com/spaces/${SPACE_ID}/entries/${entry_id}")
+  echo "$response"
+  echo "$response" | head -n1 | grep '200' > /dev/null || exit 1
+}
+
+content_post() {
+  local typename="$1"
+  local filename="$2"
+  local response
+
+  response=$(curl --silent \
+    --include \
+    --request POST \
+    --header "Authorization: Bearer ${CMA_TOKEN}" \
+    --header 'Content-Type: application/vnd.contentful.management.v1+json' \
+    --header "X-Contentful-Content-Type: ${typename}" \
+    --data-binary @"${filename}" \
+    "https://api.contentful.com/spaces/${SPACE_ID}/entries")
+  echo "$response"
+  echo "$response" | head -n1 | grep '201' > /dev/null || exit 1
+}
+
+unrecognised_command() {
+  echo "Command not found: '${1}'."
+  exit 1
+}
+
+handle_contenttype() {
+  case $1 in
+    put)
+      shift
+      contenttype_put "$@"
+      ;;
+    activate)
+      shift
+      contenttype_activate "$@"
+      ;;
+    delete)
+      shift
+      contenttype_delete "$@"
+      ;;
+    *)
+      unrecognised_command "$@"
+  esac
+}
+
+handle_content() {
+  case $1 in
+    get)
+      shift
+      content_get "$@"
+      ;;
+    post)
+      shift
+      content_post "$@"
+      ;;
+    *)
+      unrecognised_command "$@"
+  esac
+}
+
+case $1 in
+  content-type|ct)
+    shift
+    handle_contenttype "$@"
+    ;;
+  content|c)
+    shift
+    handle_content "$@"
+    ;;
+  *)
+    unrecognised_command "$@"
+esac
