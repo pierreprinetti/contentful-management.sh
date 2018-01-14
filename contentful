@@ -14,56 +14,60 @@ contenttype_put() {
   local filename="$2"
   local response
 
-  response=$(curl --silent \
+  response="$(mktemp)"
+  curl --silent \
     --include \
     --request PUT \
     --header "Authorization: Bearer ${CMA_TOKEN}" \
     --header 'Content-Type: application/vnd.contentful.management.v1+json' \
     --data-binary @"${filename}" \
-    "https://api.contentful.com/spaces/${SPACE_ID}/content_types/${typename}")
-  echo "$response"
-  echo "$response" | head -n1 | grep '201' > /dev/null || exit 1
+    "https://api.contentful.com/spaces/${SPACE_ID}/content_types/${typename}" > "$response"
+  cat "$response"
+  status_code_must_be "$response" 201
 }
 
 contenttype_delete() {
   local typename="$1"
   local response
 
-  response=$(curl --silent \
+  response="$(mktemp)"
+  curl --silent \
     --include \
     --request DELETE \
     --header "Authorization: Bearer ${CMA_TOKEN}" \
     --header 'Content-Type: application/vnd.contentful.management.v1+json' \
-    "https://api.contentful.com/spaces/${SPACE_ID}/content_types/${typename}")
-  echo "$response"
-  echo "$response" | head -n1 | grep '204' > /dev/null || exit 1
+    "https://api.contentful.com/spaces/${SPACE_ID}/content_types/${typename}" > "$response"
+  cat "$response"
+  status_code_must_be "$response" 204
 }
 
 contenttype_activate() {
   local typename="$1"
   local response
 
-  response=$(curl --silent \
+  response="$(mktemp)"
+  curl --silent \
     --include \
     --request PUT \
     --header "Authorization: Bearer ${CMA_TOKEN}" \
     --header 'X-Contentful-Version: 1' \
-    "https://api.contentful.com/spaces/${SPACE_ID}/content_types/${typename}/published")
-  echo "$response"
-  echo "$response" | head -n1 | grep '200' > /dev/null || exit 1
+    "https://api.contentful.com/spaces/${SPACE_ID}/content_types/${typename}/published" > "$response"
+  cat "$response"
+  status_code_must_be "$response" 200
 }
 
 content_get() {
   local entry_id="$1"
   local response
 
-  response=$(curl --silent \
+  response="$(mktemp)"
+  curl --silent \
     --include \
     --request GET \
     --header "Authorization: Bearer ${CMA_TOKEN}" \
-    "https://api.contentful.com/spaces/${SPACE_ID}/entries/${entry_id}")
-  echo "$response"
-  echo "$response" | head -n1 | grep '200' > /dev/null || exit 1
+    "https://api.contentful.com/spaces/${SPACE_ID}/entries/${entry_id}" > "$response"
+  cat "$response"
+  status_code_must_be "$response" 200
 }
 
 content_post() {
@@ -71,16 +75,34 @@ content_post() {
   local filename="$2"
   local response
 
-  response=$(curl --silent \
+  response="$(mktemp)"
+  curl --silent \
     --include \
     --request POST \
     --header "Authorization: Bearer ${CMA_TOKEN}" \
     --header 'Content-Type: application/vnd.contentful.management.v1+json' \
     --header "X-Contentful-Content-Type: ${typename}" \
     --data-binary @"${filename}" \
-    "https://api.contentful.com/spaces/${SPACE_ID}/entries")
-  echo "$response"
-  echo "$response" | head -n1 | grep '201' > /dev/null || exit 1
+    "https://api.contentful.com/spaces/${SPACE_ID}/entries" > "$response"
+  cat "$response"
+  status_code_must_be "$response" 201
+}
+
+status_code_must_be() {
+  local response_file="$1"
+  local expected_code="$2"
+
+  if [[ $(status_code "$response") != "${expected_code}" ]]; then exit 1; fi
+}
+
+status_code() {
+  response_file="$1"
+
+  if [[ "$(awk -F " " '{print $2}' <(sed '1q;d' "$response_file"))" == '100' ]]; then
+    awk -F " " '{print $2}' <(sed '3q;d' "$response_file")
+  else
+    awk -F " " '{print $2}' <(sed '1q;d' "$response_file")
+  fi
 }
 
 unrecognised_command() {
