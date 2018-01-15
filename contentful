@@ -88,6 +88,22 @@ content_post() {
   status_code_must_be "$response" 201
 }
 
+upload_post() {
+  local filename="$1"
+  local response
+
+  response="$(mktemp)"
+  curl --silent \
+    --include \
+    --request POST \
+    --header 'Content-Type: application/octet-stream' \
+    --header "Authorization: Bearer ${CMA_TOKEN}" \
+    --data-binary @"${filename}" \
+    "https://upload.contentful.com/spaces/${SPACE_ID}/uploads" > "$response"
+  cat "$response"
+  status_code_must_be "$response" 201
+}
+
 status_code_must_be() {
   local response_file="$1"
   local expected_code="$2"
@@ -144,6 +160,17 @@ handle_content() {
   esac
 }
 
+handle_upload() {
+  case $1 in
+    post)
+      shift
+      upload_post "$@"
+      ;;
+    *)
+      unrecognised_command "$@"
+  esac
+}
+
 case $1 in
   content-type|ct)
     shift
@@ -152,6 +179,10 @@ case $1 in
   content|c)
     shift
     handle_content "$@"
+    ;;
+  upload|up)
+    shift
+    handle_upload "$@"
     ;;
   *)
     unrecognised_command "$@"
