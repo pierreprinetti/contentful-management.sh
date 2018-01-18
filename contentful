@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-## Export in your environment the configuration variables:
-# SPACE_ID='<space_id>'
-# CMA_TOKEN='<cma_token>'
-
 ## Dependencies:
 ## - sh
 ## - curl
 ## - grep
+
+## Grabbing the configuration from the environment:
+SPACE_ID="$CONTENTFUL_SPACE"
+CMA_TOKEN="$CONTENTFUL_TOKEN"
 
 contenttype_put() {
   local typename="$1"
