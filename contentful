@@ -118,6 +118,21 @@ upload_post() {
   status_code_must_be "$response" 201
 }
 
+asset_get() {
+  local asset_id="$1"
+  local response
+
+  response="$(mktemp)"
+  curl --silent \
+    --include \
+    --request GET \
+    --header 'Content-Type: application/octet-stream' \
+    --header "Authorization: Bearer ${CMA_TOKEN}" \
+    "https://api.contentful.com/spaces/${SPACE_ID}/assets/${asset_id}" > "$response"
+  cat "$response"
+  status_code_must_be "$response" 200
+}
+
 status_code_must_be() {
   local response_file="$1"
   local expected_code="$2"
@@ -189,6 +204,17 @@ handle_upload() {
   esac
 }
 
+handle_asset() {
+  case $1 in
+    get)
+      shift
+      asset_get "$@"
+      ;;
+    *)
+      unrecognised_command "$@"
+  esac
+}
+
 case $1 in
   content-type|ct)
     shift
@@ -201,6 +227,10 @@ case $1 in
   upload|up)
     shift
     handle_upload "$@"
+    ;;
+  asset|a)
+    shift
+    handle_asset "$@"
     ;;
   *)
     unrecognised_command "$@"

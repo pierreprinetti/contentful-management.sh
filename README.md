@@ -36,3 +36,5 @@ Available commands:
   - `delete <id>`
 - `upload`
   - `post <filename>`
+- `asset`
+  - `get <id>`
