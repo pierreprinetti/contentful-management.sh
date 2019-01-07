@@ -6,6 +6,12 @@ This is a partial implementation; see below for the available commands.
 
 ## Usage
 
+### Requirements
+
+- bash
+- curl
+- grep
+
 ### Configuration
 
 The script requires two environment variables to be set:

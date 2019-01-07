@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ## Dependencies:
-## - sh
+## - bash
 ## - curl
 ## - grep
 
